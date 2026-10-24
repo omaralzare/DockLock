@@ -24,20 +24,23 @@ When **Displays have separate Spaces** is enabled in macOS, moving your cursor t
 ## Installation
 
 ### Option 1: One-Line Terminal Installer
+
 Run the following command in **Terminal** to download, compile, generate the native app icon, and launch `/Applications/DockLock.app`:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/YOUR_GITHUB_USERNAME/DockLock/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/omaralzare/DockLock/main/install.sh | bash
 ```
 
 ### Option 2: Download Pre-Built App
-1. Download **`DockLock.zip`** from the latest **Releases** page.
+
+1. Download **`DockLock.zip`** from the [Releases](https://www.google.com/search?q=https://github.com/omaralzare/DockLock/releases) page.
 2. Unzip and drag **`DockLock.app`** into your **Applications** folder.
 3. Right-click **`DockLock.app` → Open** on first launch.
 
 ### Option 3: Build from Source
+
 ```bash
-git clone https://github.com/YOUR_GITHUB_USERNAME/DockLock.git
+git clone https://github.com/omaralzare/DockLock.git
 cd DockLock
 swiftc -O dock_lock.swift -o dock-lock
 ./dock-lock --install-app
