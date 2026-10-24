@@ -33,7 +33,7 @@ curl -fsSL https://raw.githubusercontent.com/omaralzare/DockLock/main/install.sh
 
 ### Option 2: Download Pre-Built App
 
-1. Download **`DockLock.zip`** from the [Releases](https://www.google.com/search?q=https://github.com/omaralzare/DockLock/releases) page.
+1. Download **`DockLock.zip`** from the [Releases](https://github.com/omaralzare/DockLock/releases) page.
 2. Unzip and drag **`DockLock.app`** into your **Applications** folder.
 3. Right-click **`DockLock.app` → Open** on first launch.
 
