@@ -1,11 +1,30 @@
 import Cocoa
 import ApplicationServices
+import Darwin
 
 struct Config {
     static let bottomGuardMargin: CGFloat = 2.0
     static let bypassFlags: CGEventFlags = [.maskAlternate, .maskCommand]
     static let bundleID = "com.local.docklock.app"
     static let agentLabel = "com.local.docklock"
+}
+
+enum SingleInstanceGuard {
+    private static var lockFileDescriptor: Int32 = -1
+
+    static func acquireOrExit() {
+        let currentPID = ProcessInfo.processInfo.processIdentifier
+        let running = NSRunningApplication.runningApplications(withBundleIdentifier: Config.bundleID)
+        if running.contains(where: { $0.processIdentifier != currentPID }) {
+            exit(0)
+        }
+
+        let lockPath = "/tmp/\(Config.agentLabel).lock"
+        lockFileDescriptor = open(lockPath, O_CREAT | O_RDWR, 0o600)
+        if lockFileDescriptor >= 0 && flock(lockFileDescriptor, LOCK_EX | LOCK_NB) != 0 {
+            exit(0)
+        }
+    }
 }
 
 final class DisplayGuard {
@@ -178,8 +197,17 @@ enum LaunchAgentManager {
         FileManager.default.fileExists(atPath: plistURL.path)
     }
 
+    private static func runLaunchctl(_ args: [String]) {
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: "/bin/launchctl")
+        task.arguments = args
+        try? task.run()
+        task.waitUntilExit()
+    }
+
     static func setEnabled(_ enabled: Bool) {
         let fm = FileManager.default
+        let uid = getuid()
         if enabled {
             let appBinary = "/Applications/DockLock.app/Contents/MacOS/DockLock"
             let execPath = fm.fileExists(atPath: appBinary)
@@ -199,14 +227,16 @@ enum LaunchAgentManager {
                 </array>
                 <key>RunAtLoad</key>
                 <true/>
-                <key>KeepAlive</key>
-                <true/>
             </dict>
             </plist>
             """
             try? fm.createDirectory(at: plistURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+            runLaunchctl(["bootout", "gui/\(uid)", plistURL.path])
             try? plist.write(to: plistURL, atomically: true, encoding: .utf8)
+            runLaunchctl(["bootstrap", "gui/\(uid)", plistURL.path])
         } else {
+            runLaunchctl(["bootout", "gui/\(uid)", plistURL.path])
+            runLaunchctl(["remove", Config.agentLabel])
             try? fm.removeItem(at: plistURL)
         }
     }
@@ -395,8 +425,10 @@ enum AppBundleInstaller {
                 <key>CFBundlePackageType</key>
                 <string>APPL</string>
                 <key>CFBundleShortVersionString</key>
-                <string>1.2</string>
+                <string>1.3</string>
                 <key>LSUIElement</key>
+                <true/>
+                <key>LSMultipleInstancesProhibited</key>
                 <true/>
             </dict>
             </plist>
@@ -538,6 +570,8 @@ if CommandLine.arguments.contains("--install-app") {
     AppBundleInstaller.installAppBundle()
     exit(0)
 }
+
+SingleInstanceGuard.acquireOrExit()
 
 let app = NSApplication.shared
 app.setActivationPolicy(.accessory)
